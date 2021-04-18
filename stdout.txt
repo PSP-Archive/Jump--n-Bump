@@ -1,0 +1,1 @@
+Opened audio at 44100Hz 16bit stereo, 2048 bytes audio buffer
