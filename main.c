@@ -23,6 +23,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <pspkernel.h>
 #include "globals.h"
 #include <fcntl.h>
 #ifndef _MSC_VER
@@ -44,6 +45,9 @@
 #ifndef M_PI
 #define M_PI		3.14159265358979323846
 #endif
+
+PSP_MODULE_INFO("Jump n Bump", 0, 1, 1);
+PSP_HEAP_SIZE_KB(20480);
 
 gob_t rabbit_gobs = { 0 };
 gob_t font_gobs = { 0 };
@@ -237,6 +241,32 @@ int pogostick, bunnies_in_space, jetpack, lord_of_the_flies, blood_is_thicker_th
 int gocheatpogo, gocheatspace, gocheatjetpack, gocheatflies, gocheatblood;
 int goend;
 
+// PSP things
+int psp_exit_callback(int arg1, int arg2, void *common)
+{
+	iDoRun = 0;
+	sceDisplayWaitVblankStart();
+	sceKernelExitGame();
+	return 0;
+}
+
+int psp_callback_thread(SceSize args, void *argp)
+{
+	int cbid;
+	cbid = sceKernelCreateCallback("Exit Callback", psp_exit_callback, NULL);
+	sceKernelRegisterExitCallback(cbid);
+	sceKernelSleepThreadCB();
+	return 0;
+}
+
+int psp_setup_callbacks(void)
+{
+	int thid = 0;
+	thid = sceKernelCreateThread("update_thread", psp_callback_thread, 0x11, 0xFA0, 0, 0);
+	if(thid >= 0)
+		sceKernelStartThread(thid, 0, 0);
+	return thid;
+} 
 
 #ifndef _MSC_VER
 int filelength(int handle)
@@ -1273,7 +1303,7 @@ static void game_loop(void) {
 
 	intr_sysupdate();
 
-	while (1) {
+	while (iDoRun) {
 		while (update_count) {
 
 			check_cheats();
@@ -1460,7 +1490,7 @@ static int menu_loop(void)
 		ai[c1] = 0;
         }
 
-	while (1) {
+	while (iDoRun) {
 
 		if (!is_net)
 			if (menu() != 0)
@@ -1490,7 +1520,7 @@ static int menu_loop(void)
 			s2 = rnd(150) + 50;
 
 			for (c1 = 0; c1 < NUM_FLIES; c1++) {
-				while (1) {
+				while (iDoRun) {
 					flies[c1].x = s1 + rnd(101) - 50;
 					flies[c1].y = s2 + rnd(101) - 50;
 					if (GET_BAN_MAP_XY(flies[c1].x, flies[c1].y) == BAN_VOID)
@@ -1648,6 +1678,8 @@ static int menu_loop(void)
 
 int main(int argc, char *argv[])
 {
+	iDoRun = 1;
+	psp_setup_callbacks();
 	int result;
 
 	if (init_program(argc, argv, pal) != 0)
@@ -2263,8 +2295,8 @@ void position_player(int player_num)
 	int c1;
 	int s1, s2;
 
-	while (1) {
-		while (1) {
+	while (iDoRun) {
+		while (iDoRun) {
 			s1 = rnd(22);
 			s2 = rnd(16);
 			if (ban_map[s2][s1] == BAN_VOID && (ban_map[s2 + 1][s1] == BAN_SOLID || ban_map[s2 + 1][s1] == BAN_ICE))
@@ -2810,7 +2842,7 @@ int init_level(int level, char *pal)
 		}
 	}
 
-	while (1) {
+	while (iDoRun) {
 		s1 = rnd(22);
 		s2 = rnd(16);
 		if (ban_map[s2][s1] == BAN_VOID) {
@@ -2818,7 +2850,7 @@ int init_level(int level, char *pal)
 			break;
 		}
 	}
-	while (1) {
+	while (iDoRun) {
 		s1 = rnd(22);
 		s2 = rnd(16);
 		if (ban_map[s2][s1] == BAN_VOID) {
@@ -2826,7 +2858,7 @@ int init_level(int level, char *pal)
 			break;
 		}
 	}
-	while (1) {
+	while (iDoRun) {
 		s1 = rnd(22);
 		s2 = rnd(16);
 		if (ban_map[s2][s1] == BAN_VOID) {
@@ -2834,7 +2866,7 @@ int init_level(int level, char *pal)
 			break;
 		}
 	}
-	while (1) {
+	while (iDoRun) {
 		s1 = rnd(22);
 		s2 = rnd(16);
 		if (ban_map[s2][s1] == BAN_VOID) {
@@ -3422,9 +3454,10 @@ void deinit_program(void)
 #ifdef _MSC_VER
 		MessageBox(0, main_info.error_str, "Jump'n'Bump", 0);
 #endif
-		exit(1);
+		sceKernelExitGame();
 	} else
-		exit(0);
+		sceKernelExitGame();
+		//exit(0);
 
 }
 
@@ -3454,7 +3487,7 @@ int read_level(void)
 
 	for (c1 = 0; c1 < 16; c1++) {
 		for (c2 = 0; c2 < 22; c2++) {
-			while (1) {
+			while (iDoRun) {
 				chr = (int) *(handle++);
 				if (chr >= '0' && chr <= '4')
 					break;

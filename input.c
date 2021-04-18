@@ -89,7 +89,6 @@ void update_player_actions(void)
 			tellServerPlayerMoved(0, GAMEEND, 0);
 		}
 
-
 		tmp = SDL_JoystickGetButton(joyPSP, sdljbSquare);
 		if (tmp != player[1].action_left)
 			tellServerPlayerMoved(1, MOVEMENT_LEFT, tmp);

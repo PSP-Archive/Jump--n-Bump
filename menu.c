@@ -120,7 +120,7 @@ int menu(void)
 	end_loop_flag = new_game_flag = 0;
 
 	update_count = 1;
-	while (1) {
+	while (iDoRun) {
 
 		dj_mix();
 
